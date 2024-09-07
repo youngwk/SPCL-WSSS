@@ -39,12 +39,12 @@ python make_single_positive_cls_labels.py
 
 #### PASCAL VOC
 ```
-python run_sample_pascal.py --work_space YOUR_WORK_SPACE --loss_type llcp --delta_rel 0.002 --activation_type pstplt --pred_th 0.5
+python run_sample_pascal.py --work_space YOUR_WORK_SPACE --loss_type llcp --delta_rel 0.2 --activation_type pstplt --pred_th 0.5
 ```
 
 #### MS COCO
 ```
-python run_sample_coco.py --work_space YOUR_WORK_SPACE --loss_type llcp --delta_rel 0.002 --activation_type pstplt --pred_th 0.5
+python run_sample_coco.py --work_space YOUR_WORK_SPACE --loss_type llcp --delta_rel 0.2 --activation_type pstplt --pred_th 0.5
 ```
 
 ### Step 4. Train semantic segmentation network.
