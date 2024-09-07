@@ -19,8 +19,7 @@ conda env create -f environment.yml
 #### MS COCO
 - Download MS COCO images from the [official COCO website](https://cocodataset.org/#download).
 - Generate mask from annotations (annToMask.py file in ./mscoco/).
-- Download MS COCO image-level labels from [here](https://drive.google.com/drive/folders/1XCu51bAUK3nOvO-VVKD7kE9bIFpAECBR?usp=sharing) and put them in ./mscoco/
-- You need to specify the path ('coco14_root') of your downloaded data in the following steps.
+- You need to specify the path ('mscoco_root') of your downloaded data in the following steps.
 
 ### Step 2. Generate single positive class labels.
 
@@ -32,7 +31,7 @@ python make_single_positive_cls_labels.py
 
 #### MS COCO
 ```
-cd coco14
+cd mscoco
 python make_single_positive_cls_labels.py
 ```
 
