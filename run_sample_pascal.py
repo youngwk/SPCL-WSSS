@@ -105,7 +105,6 @@ if __name__ == '__main__':
 
     os.makedirs(args.work_space, exist_ok=True)
     os.makedirs(args.cam_out_dir, exist_ok=True)
-    os.makedirs(args.lpcam_out_dir, exist_ok=True)
     os.makedirs(args.ir_label_out_dir, exist_ok=True)
     os.makedirs(args.sem_seg_out_dir, exist_ok=True)
     os.makedirs(args.ins_seg_out_dir, exist_ok=True)

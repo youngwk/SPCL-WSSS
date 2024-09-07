@@ -188,7 +188,6 @@ def run(args):
 
             optimizer.zero_grad()
 
-            # loss = F.binary_cross_entropy_with_logits(x, label)
 
             if args.loss_type == 'an':
                 loss = F.binary_cross_entropy_with_logits(x, label)
@@ -206,78 +205,13 @@ def run(args):
 
                     train_dataset.labels[idx[correction_idx[0].cpu()], correction_idx[1].cpu()] = 1.0 # LL-Cp
                     llcp_count += len(correction_idx[0])
-            elif args.loss_type == 'llr':
-                if ep == 0 or args.delta_rel == 0:
-                    loss = F.binary_cross_entropy_with_logits(x, label)
-                else:
-                    k = math.ceil(label.shape[0] * label.shape[1] * (1-clean_rate))
-                    loss_matrix = F.binary_cross_entropy_with_logits(x, label, reduction='none')
-                    zero_loss_matrix = torch.zeros_like(loss_matrix)
-                    unobserved_loss = (label == 0).bool() * loss_matrix
-                    topk_loss = torch.topk(unobserved_loss.flatten(), k).values[-1]
-                    loss = torch.where(unobserved_loss < topk_loss, loss_matrix, zero_loss_matrix).mean()
-            elif args.loss_type == 'llct':
-                if ep == 0 or args.delta_rel == 0:
-                    loss = F.binary_cross_entropy_with_logits(x, label)
-                else:
-                    k = math.ceil(label.shape[0] * label.shape[1] * (1-clean_rate))
-                    loss_matrix = F.binary_cross_entropy_with_logits(x, label, reduction='none')
-                    corrected_loss_matrix = F.binary_cross_entropy_with_logits(x, torch.logical_not(label).float(), reduction='none')
-                    unobserved_loss = (label == 0).bool() * loss_matrix
-                    topk_loss = torch.topk(unobserved_loss.flatten(), k).values[-1]
-                    loss = torch.where(unobserved_loss < topk_loss, loss_matrix, corrected_loss_matrix).mean()
-
-            elif args.loss_type == 'em':
-                preds = torch.sigmoid(x)
-                loss_mtx = torch.zeros_like(preds)
-                loss_mtx[label == 1] = neg_log(preds[label == 1])
-                loss_mtx[label == 0] = -0.1 * (
-                        preds[label == 0] * neg_log(preds[label == 0]) +
-                        (1 - preds[label == 0]) * neg_log(1 - preds[label == 0])
-                    )
-                loss = loss_mtx.mean()
-            elif args.loss_type == 'emapl':
-                preds = torch.sigmoid(x)
-                loss_mtx = torch.zeros_like(preds)
-                loss_mtx[label == 1] = neg_log(preds[label == 1])
-                loss_mtx[label == 0] = -0.1 * (
-                        preds[label == 0] * neg_log(preds[label == 0]) +
-                        (1 - preds[label == 0]) * neg_log(1 - preds[label == 0])
-                    )
-                soft_label = -label[label < 0]
-                loss_mtx[label < 0] = 0.9 * (
-                        soft_label * neg_log(preds[label < 0]) +
-                        (1 - soft_label) * neg_log(1 - preds[label < 0])
-                )
-                loss = loss_mtx.mean()
+            
             elif args.loss_type == 'ls':
                 preds = torch.sigmoid(x)
                 loss_mtx = torch.zeros_like(preds)
                 loss_mtx[label == 1] = 0.9 * neg_log(preds[label == 1]) + 0.1 * neg_log(1.0 - preds[label == 1])
                 loss_mtx[label == 0] = 0.9 * neg_log(1.0 - preds[label == 0]) + 0.1 * neg_log(preds[label == 0])
                 loss = loss_mtx.mean()
-
-            elif args.loss_type == 'asl':
-                x_sigmoid = torch.sigmoid(x)
-                xs_pos = x_sigmoid
-                xs_neg = 1 - x_sigmoid
-
-                xs_neg = (xs_neg + 0.2).clamp(max=1)
-
-                los_pos = label * torch.log(xs_pos.clamp(min=1e-8))
-                los_neg = (1 - label) * torch.log(xs_neg.clamp(min=1e-8))
-                loss_mtx = los_pos + los_neg
-
-                torch.set_grad_enabled(False)
-                pt0 = xs_pos * label
-                pt1 = xs_neg * (1 - label)
-                pt = pt0 + pt1 
-                one_sided_gamma = 2 * (1 - label)
-                one_sided_w = torch.pow(1 - pt, one_sided_gamma)
-                torch.set_grad_enabled(True)
-                loss_mtx *= one_sided_w
-
-                loss = -loss_mtx.mean()
 
             elif args.loss_type == 'role':
                 estimated_labels = model_g(idx)
@@ -320,48 +254,7 @@ def run(args):
         # validate(model, val_data_loader)
         timer.reset_stage()
 
-        if args.loss_type in ['llr', 'llct']:
-            clean_rate -= args.delta_rel
-        elif args.loss_type == 'emapl' and ep >= 5:
-            #pseudo-labeling
-            model.eval()
-            total_preds = None
-            total_idx = None
-            with torch.no_grad():
-                for step, pack in enumerate(train_data_loader):
-                    img = pack['img']
-                    img = img.cuda()
-                    label = pack['label'].float().cuda(non_blocking=True)
-                    idx = pack['idx']
-                    x = model(img)
-                    preds = torch.sigmoid(x)
-
-                    if step == 0:
-                        total_preds = preds.detach().cpu().numpy()
-                        total_idx = idx.cpu().numpy()
-                    else:
-                        total_preds = np.vstack((preds.detach().cpu().numpy(), total_preds))
-                        total_idx = np.hstack((idx.cpu().numpy(), total_idx))
-
-            for i in range(total_preds.shape[1]):  # class-wise
-
-                class_preds = total_preds[:, i]
-                class_labels_obs = train_dataset.labels[:, i]
-                class_labels_obs = class_labels_obs[total_idx]
-
-                # select unlabel data:
-                unlabel_class_preds = class_preds[class_labels_obs == 0]
-                unlabel_class_idx = total_idx[class_labels_obs == 0]
-
-                # select samples:
-                neg_PL_num = int(0.9 * unlabel_num[i] / 5)
-                sorted_idx_loc = np.argsort(unlabel_class_preds)  # ascending
-                selected_idx_loc = sorted_idx_loc[:neg_PL_num]  # select indices
-
-                # assgin soft labels:
-                for loc in selected_idx_loc:
-                    train_dataset.labels[unlabel_class_idx[loc], i] = -unlabel_class_preds[loc]
-
+        
     torch.save(model.module.state_dict(), args.cam_weights_name)
     torch.cuda.empty_cache()
 
