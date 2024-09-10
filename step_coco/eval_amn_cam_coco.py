@@ -14,7 +14,8 @@ def run(args):
     n_images = 0
 
     for i, id in enumerate(ids):
-        label = np.array(Image.open('../wsml2022/data/coco/mask/train2014/%s.png' % id.lstrip('0')))
+        # label = np.array(Image.open('../wsml2022/data/coco/mask/train2014/%s.png' % id.lstrip('0')))
+        label = np.array(Image.open(os.path.join(args.coco14_root, 'mask', 'train2014', '%s.png' % id.lstrip('0'))))
         n_images += 1
         cam_dict = np.load(os.path.join(args.amn_cam_out_dir, id + '.npy'), allow_pickle=True).item()
         if not ('high_res' in cam_dict):
