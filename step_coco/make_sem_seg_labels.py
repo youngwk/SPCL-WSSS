@@ -34,7 +34,7 @@ def _work(process_id, model, dataset, args):
 
             edge, dp = model(pack['img'][0].cuda(non_blocking=True))
 
-            cam_dict = np.load(args.lpcam_out_dir + '/' + img_name + '.npy', allow_pickle=True).item()
+            cam_dict = np.load(args.cam_out_dir + '/' + img_name + '.npy', allow_pickle=True).item()
             
             cams = cam_dict['cam']
             # cams = np.power(cam_dict['cam'], 1.5) # Anti
