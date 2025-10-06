@@ -20,7 +20,7 @@ if __name__ == '__main__':
 
     # Environment
     parser.add_argument("--num_workers", default=12, type=int)
-    parser.add_argument("--mscoco_root", default='../wsml2022/data/coco', type=str, help="Path to MSCOCO")
+    parser.add_argument("--mscoco_root", type=str, help="Path to MSCOCO")
 
     parser.add_argument("--num_classes", default=80, type=int)
 
