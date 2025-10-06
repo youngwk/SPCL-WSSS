@@ -20,7 +20,7 @@ if __name__ == '__main__':
 
     # Environment
     parser.add_argument("--num_workers", default=12, type=int)
-    parser.add_argument("--voc12_root", default='../wsml2022/data/pascal/VOCdevkit/VOC2012/', type=str,
+    parser.add_argument("--voc12_root", type=str,
                         help="Path to VOC 2012 Devkit, must contain ./JPEGImages as subdirectory.")
 
     parser.add_argument("--num_classes", default=20, type=int)

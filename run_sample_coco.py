@@ -26,7 +26,7 @@ if __name__ == '__main__':
 
     # Environment
     parser.add_argument("--num_workers", default=24, type=int)
-    parser.add_argument("--coco14_root", default='../wsml2022/data/coco', type=str)
+    parser.add_argument("--coco14_root", type=str)
 
     parser.add_argument("--num_classes", default=80, type=int)
 
